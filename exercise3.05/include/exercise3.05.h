@@ -1,0 +1,4 @@
+#ifndef EXERCISE3_05_H_LOADED
+#define EXERCISE3_05_H_LOADED
+
+#endif
