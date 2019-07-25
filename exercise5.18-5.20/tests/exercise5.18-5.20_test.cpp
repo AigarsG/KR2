@@ -50,7 +50,7 @@ TEST(decl2text, decl2text_01_standard_input)
 		STRCMP_EQUAL(decls[i].expr, buf);
 	}
 }
-#if 0
+
 TEST(decl2text, decl2text_02_non_standard_input)
 {
 	struct keyval decls[] = {
@@ -65,7 +65,7 @@ TEST(decl2text, decl2text_02_non_standard_input)
 		STRCMP_EQUAL(decls[i].expr, buf);
 	}
 }
-#endif
+
 int main(int argc, char** argv)
 {
 	return CommandLineTestRunner::RunAllTests(argc, argv);

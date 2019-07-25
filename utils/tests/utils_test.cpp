@@ -29,8 +29,8 @@ TEST_GROUP(helper_functions)
 
 TEST(helper_functions, in_str_array_positive)
 {
-	CHECK_EQUAL(3, in_str_array("bananas", haystack, haystacksz));
-	CHECK_EQUAL(4, in_str_array("blueberries", haystack, haystacksz));
+	CHECK(0 < in_str_array("bananas", haystack, haystacksz));
+	CHECK(0 < in_str_array("blueberries", haystack, haystacksz));
 }
 
 TEST(helper_functions, in_str_array_negative)

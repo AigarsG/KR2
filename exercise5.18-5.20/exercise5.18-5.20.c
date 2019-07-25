@@ -25,7 +25,7 @@ int decl2text(const char *decl, char *outbuf, size_t outbufsz)
 
 		ret = DCLContext_copy_result(context, outbuf, outbufsz);
 		if (ret) {
-			PRINT_ERROR("expression is to long to fit into output");
+			PRINT_ERROR("expression is too long to fit into output");
 			break;
 		}
 

@@ -38,7 +38,9 @@ static int DCLContext_dcl(DCLContext *);
 static int DCLContext_dirdcl(DCLContext *);
 static int DCLContext_is_finalized(DCLContext *);
 static int DCLContext_next_tokentype(DCLContext *);
+static int DCLContext_peek_tokentype(DCLContext *);
 static int DCLContext_current_tokentype(DCLContext *);
+static int DCLContext_resolve_specifiers(DCLContext *);
 
 static const char *g_type_specifiers[] =
 {
@@ -64,9 +66,6 @@ static const size_t g_type_qualifierssz =
 
 static int DCLContext_current_tokentype(DCLContext *context)
 {
-	if (!context)
-		return -1;
-
 	return context->current_tokentype;
 }
 
@@ -114,6 +113,31 @@ static int DCLContext_next_tokentype(DCLContext *context)
 		}
 	}
 	return context->current_tokentype;
+}
+
+static int DCLContext_peek_tokentype(DCLContext *context)
+{
+	int ret;
+	char *decl;
+	decl = context->decl;
+
+	while (*decl == ' ' || *decl == '\t')
+		decl++;
+	if (*decl == '(') {
+		decl++;
+		if (*decl == ')') {
+			ret = PARENS;
+		} else {
+			ret = '(';
+		}
+	} else if (*decl == '[') {
+		ret = BRACKETS;
+	} else if (isalpha(*decl)) {
+		ret = NAME;
+	} else {
+		ret = *decl;
+	}
+	return ret;
 }
 
 static int DCLContext_dcl(DCLContext *context)
@@ -201,6 +225,63 @@ static int DCLContext_is_finalized(DCLContext *context)
 	return !!context->is_finalized;
 }
 
+static int DCLContext_resolve_specifiers(DCLContext *context)
+{
+	int ret;
+	size_t typespsz, typeqfsz, toklen;
+	size_t tlen, qlen, maxtlen, maxqlen;
+	size_t *plen, maxlen;
+	const char **typesp, **typeqf;
+	char *buf;
+
+	ret = 0;
+	tlen = 0;
+	qlen = 0;
+	maxtlen = sizeof(context->type_specifier);
+	maxqlen = sizeof(context->type_qualifier);
+	typesp = g_type_specifiers;
+	typeqf = g_type_qualifiers;
+	typespsz = g_type_specifierssz;
+	typeqfsz = g_type_qualifierssz;
+
+	while (NAME == DCLContext_peek_tokentype(context)) {
+		DCLContext_next_tokentype(context);
+		if (-1 < in_str_array(context->token, typesp, typespsz)) {
+			buf = context->type_specifier;
+			maxlen = maxtlen;
+			plen = &tlen;
+		} else if (-1 < in_str_array(context->token, typeqf, typeqfsz)) {
+			buf = context->type_qualifier;
+			maxlen = maxqlen;
+			plen = &qlen;
+		} else {
+			context->decl -= strlen(context->token);
+			break;
+		}
+		toklen = strlen(context->token);
+		if (0 == *plen) {
+			if ((*plen + toklen) >= maxlen) {
+				PRINT_ERROR("not enough space!");
+				ret = -1;
+				break;
+			}
+			strcpy(buf, context->token);
+			*plen += toklen;
+		} else {
+			if ((*plen + toklen + 1) >= maxlen) {
+				PRINT_ERROR("not enough space!");
+				ret = -1;
+				break;
+			}
+			strcpy(buf + *plen, " ");
+			strcpy(buf + *plen + 1, context->token);
+			*plen += toklen + 1;
+		}
+	}
+
+	return ret;
+}
+
 DCLContext *DCLContext_init(const char *decl)
 {
 	DCLContext *context;
@@ -234,18 +315,9 @@ int DCLContext_express(DCLContext *context)
 		return -1;
 	if (context->is_finalized)
 		return 0;
-	/* TODO handle const */
-	DCLContext_next_tokentype(context);
-	strcpy(context->type_specifier, context->token);
+	DCLContext_resolve_specifiers(context);
 	DCLContext_dcl(context);
 	context->is_finalized = 1;
-	#if 0
-	while ((ttype = DCLContext_next_tokentype(context))) {
-		strcpy(context->type_specifier, context->token);
-		context->out[0] = '\0';
-		DCLContext_dcl(context);
-	}
-	#endif
 	return 0;
 }
 
@@ -292,8 +364,10 @@ int DCLContext_copy_result(DCLContext *context, char *outbuf, size_t outbufsz)
 				break;
 			memcpy(outbuf + offset, context->type_qualifier,
 				type_qualifierlen);
+			offset += type_qualifierlen;
 			memcpy(outbuf + offset, " ", 1);
 			offset++;
+			break;
 		case 5:
 			memcpy(outbuf + offset, context->type_specifier,
 				type_specifierlen);
