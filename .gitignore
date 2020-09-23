@@ -5,6 +5,7 @@
 !*.cpp
 !*.h
 !*.sh
+!*.txt
 !.gitignore
 !common
 !Makefile
