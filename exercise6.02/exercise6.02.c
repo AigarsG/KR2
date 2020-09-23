@@ -21,29 +21,31 @@ enum state
 	STOP
 };
 
-/* TODO Create keyword context structure */
-struct keyword_context
+/* TODO Create context structure */
+typedef struct state_context
 {
-	char **input;
-};
+	const char *input;
+	char **curpos;
+	size_t n_sig_chars;
+	Treenode *keywords;
+} StateContext;
 
 /*** INTERNAL FUNCTION SIGNATURES ***/
-static enum state parse_input(const char *input, size_t n_sig_chars,
-	Treenode *);
+static enum state parse_input(StateContext *);
 static enum state is_space(const char c);
-static enum state start_of_statement(char **s, size_t n_sig_chars, Treenode *);
-static enum state end_of_statement(char **s, size_t n_sig_chars, Treenode *);
-static enum state start_of_comment(char **s, size_t n_sig_chars, Treenode *);
-static enum state end_of_comment(char **s, size_t n_sig_chars, Treenode *);
-static enum state start_of_word(char **s, size_t n_sig_chars, Treenode *);
-static enum state end_of_word(char **s, size_t n_sig_chars, Treenode *);
-static enum state non_blank(char **s, size_t n_sig_chars, Treenode *);
-static enum state blank(char **s, size_t n_sig_chars, Treenode *);
-static enum state ignore(char **s, size_t n_sig_chars, Treenode *);
+static enum state start_of_statement(StateContext *);
+static enum state end_of_statement(StateContext *);
+static enum state start_of_comment(StateContext *);
+static enum state end_of_comment(StateContext *);
+static enum state start_of_word(StateContext *);
+static enum state end_of_word(StateContext *);
+static enum state non_blank(StateContext *);
+static enum state blank(StateContext *);
+static enum state ignore(StateContext *);
 
 /*** GLOBALS ***/
-/* Each enum state is and index to corresponding state function */
-static int (*g_state_functions[])(char *, size_t, Treenode *) =
+/* Each enum state is an index to corresponding state function */
+static int (*g_state_functions[])(StateContext *) =
 {
 	start_of_statement,
 	end_of_statement,
@@ -56,13 +58,13 @@ static int (*g_state_functions[])(char *, size_t, Treenode *) =
 };
 
 /*** INTERNAL FUNCTION IMPLEMENTATIONS ***/
-static int parse_input(const char *input, size_t n_sig_chars, Treenode *root)
+static int parse_input(StateContext *state_context)
 {
 	int ret;
 	char *ptr;
 	enum state current;
 
-	if (!input || !n_sig_chars || !root)
+	if (!state_context)
 		return -EINVAL;
 
 	ret = 0;
@@ -80,7 +82,7 @@ static int parse_input(const char *input, size_t n_sig_chars, Treenode *root)
 	 *			ignore declaration as syntax error
 	 */
 	while (STOP != current) {
-		current = g_state_functions[current](&ptr, n_sig_chars, root);
+		current = g_state_functions[current](state_context);
 		if (ERROR == current) {
 			PRINT_ERROR("Experienced error on state transition");
 			ret = -1;
@@ -116,26 +118,39 @@ static int end_of_comment(const char *s, int multiline_comment)
 		return *s == '\n';
 }
 
-static enum state start_of_statement(char **s, size_t n_sig_chars, Treenode *root)
+static enum state start_of_statement(StateContext *state_context)
 {
 	char c;
-	c = **s;
+
+	if (!state_context)
+		return ERROR;
+
+	c = **state_context->curpos;
 
 	if (is_space_or_eol(c))
 		return BLANK;
 	return NON_BLANK;
 }
 
-static enum state end_of_statement(char **s, size_t n_sig_chars, Treenode *root)
+static enum state end_of_statement(StateContext *state_context)
 {
+	if (!state_context)
+		return ERROR;
+
 	/* last character is ';', advance to next one and signal the start */
-	(*s)++;
+	(*state_context->curpos)++;
 	return START_OF_STATEMENT;
 }
 
-static enum state start_of_comment(char **s, size_t n_sig_chars, Treenode *root)
+static enum state start_of_comment(StateContext *state_context)
 {
 	int multiline_comment;
+	char **s;
+
+	if (!state_context)
+		return ERROR;
+
+	s = state_context->curpos;
 
 	multiline_comment = 0;
 	if (**s == '/' && *(*s + 1) == '*')
@@ -149,8 +164,15 @@ static enum state start_of_comment(char **s, size_t n_sig_chars, Treenode *root)
 		return END_OF_COMMENT;
 }
 
-static enum state end_of_comment(char **s, size_t n_sig_chars, Treenode *root)
+static enum state end_of_comment(StateContext *state_context)
 {
+	char **s;
+
+	if (!state_context)
+		return ERROR;
+
+	s = state_context->curpos;
+
 	/* Advance past single line or multiline comment */
 	if (**s == '\n')
 		(*s)++;
@@ -164,6 +186,7 @@ static enum state end_of_comment(char **s, size_t n_sig_chars, Treenode *root)
 }
 
 static enum state start_of_word(char **s, size_t n_sig_chars, Treenode *root)
+static enum state start_of_word(StateContext *state_context)
 {
 	size_t len;
 	enum state ret;
@@ -176,7 +199,7 @@ static enum state start_of_word(char **s, size_t n_sig_chars, Treenode *root)
 	 * its length is less than n_sig_chars
 	 */
 	len = 0;
-	tmp = *s;
+	tmp = *state_context->curpos;
 	ret = END_OF_WORD;
 	node = NULL;
 	ends_with_comma = 0;
@@ -237,25 +260,29 @@ static enum state blank(char **s, size_t n_sig_chars, Treenode *root)
 
 void print_unique_variables(const char *input, FILE *outstream, size_t n_sig_chars)
 {
-	Treenode *variable_tree;
+	StateContext state_context;
 
 	if (!input || !outstream || !n_sig_chars) {
 		PRINT_ERROR("invalid input");
 		return;
 	}
 
-	variable_tree = Treenode_init();
-	if (!variable_tree) {
-		PRINT_ERROR("failed to initialize variable_tree");
-	}
-
-	if (parse_input(input, n_sig_chars, variable_tree) < 0) {
-		PRINT_ERROR("failed to parse input, %s (%d)", strerror(errno),
-			errno);
-		Treenode_destroy(variable_tree);
+	state_context.input = input;
+	state_context.n_sig_chars = n_sig_chars;
+	state_context.curpos = &state_context.input;
+	state_context.keywords = Treenode_init();
+	if (!state_context.keywords) {
+		PRINT_ERROR("failed Treenode_init");
 		return;
 	}
 
-	Treenode_print(variable_tree, outstream);
-	Treenode_destroy(variable_tree);
+	if (parse_input(&state_context) < 0) {
+		PRINT_ERROR("failed to parse input, %s (%d)", strerror(errno),
+			errno);
+		Treenode_destroy(state_context.keywords);
+		return;
+	}
+
+	Treenode_print(state_context.keywords, outstream);
+	Treenode_destroy(state_context.keywords);
 }

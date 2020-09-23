@@ -1,18 +1,17 @@
 # Ignore all
 *
 
-# Unignore all with extensions
-!*.*
-
+!*.c
+!*.cpp
+!*.h
+!*.sh
+!.gitignore
+!common
+!Makefile
+!README.md
 # Unignore all dirs
 !*/
 
-# Unignore makefile
-!Makefile
+*cpputest*
 
 ### Above combination will ignore all files without extension ###
-
-*.pdf
-*.PDF
-*.o
-*cpputest*

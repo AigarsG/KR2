@@ -1,0 +1,34 @@
+function f_create_file_or_dir
+{
+	if [ $# -ne 2 ]; then
+		echo "Invalid number of arguments"
+		echo "Usage: f_create_file_or_dir 'file'|'dir' NAME"
+		echo "Example: f_create_file_or_dir 'file' apple_project/Makefile"
+		exit 1
+	fi
+
+	if   [ "$1" == 'dir' ]; then
+		if [ ! -d "$2" ]; then
+			mkdir -p "$2"
+		fi
+	elif [ "$1" == 'file' ]; then
+		if [ ! -f "$2" ]; then
+			basedir=$(dirname "$2")
+			if [ ! -d "$basedir" ]; then
+				echo "Failed to create file '$2'. Directory '$basedir' does not exist"
+				exit 1
+			else
+				touch "$2"
+			fi
+		fi
+	else
+		echo "Error. '$1' argument does not match 'file' or 'dir'"
+		exit 1
+	fi
+}
+
+
+function f_get_project_baseguard
+{
+	echo "$(echo "$1" | sed 's/[\.-]/_/g' | awk '{print toupper($0)}')"
+}
