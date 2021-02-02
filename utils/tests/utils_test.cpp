@@ -360,6 +360,64 @@ TEST(Treenode, Treenode_print)
 	fclose(fp);
 }
 
+
+TEST_GROUP(LinkedList)
+{
+	int rval;
+	LinkedList *llist;
+
+	void setup()
+	{
+		llist = LinkedList_create();
+	}
+
+	void teardown()
+	{
+		LinkedList_destroy(llist);
+	}
+};
+
+TEST(LinkedList, LinkedList_create)
+{
+	CHECK(llist != NULL);
+}
+
+TEST(LinkedList, LinkedList_top)
+{
+	CHECK_EQUAL(EINVAL, LinkedList_top(NULL, &rval));
+	CHECK_EQUAL(EINVAL, LinkedList_top(llist, NULL));
+	CHECK_EQUAL(0, LinkedList_top(llist, &rval));
+	CHECK_EQUAL(0, rval);
+	LinkedList_add(llist, 12);
+	CHECK_EQUAL(0, LinkedList_top(llist, &rval));
+	CHECK_EQUAL(12, rval);
+	LinkedList_add(llist, -23);
+	CHECK_EQUAL(0, LinkedList_top(llist, &rval));
+	CHECK_EQUAL(-23, rval);
+}
+
+TEST(LinkedList, LinkedList_bottom)
+{
+	CHECK_EQUAL(EINVAL, LinkedList_bottom(NULL, &rval));
+	CHECK_EQUAL(EINVAL, LinkedList_bottom(llist, NULL));
+	CHECK_EQUAL(0, LinkedList_bottom(llist, &rval));
+	CHECK_EQUAL(0, rval);
+	LinkedList_add(llist, 12);
+	CHECK_EQUAL(0, LinkedList_bottom(llist, &rval));
+	CHECK_EQUAL(12, rval);
+	LinkedList_add(llist, -20);
+	CHECK_EQUAL(0, LinkedList_bottom(llist, &rval));
+	CHECK_EQUAL(12, rval);
+}
+
+TEST(LinkedList, LinkedList_add)
+{
+	CHECK_EQUAL(EINVAL, LinkedList_add(NULL, 10));
+	LinkedList_add(llist, 10);
+	CHECK_EQUAL(0, LinkedList_top(llist, &rval));
+	CHECK_EQUAL(10, rval);
+}
+
 int main(int argc, char** argv)
 {
 	MemoryLeakWarningPlugin::turnOnNewDeleteOverloads();

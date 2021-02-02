@@ -47,4 +47,12 @@ char *Treenode_get_value(Treenode *);
 void Treenode_print(Treenode *, FILE *stream);
 
 
+/*** LinkedList ***/
+typedef struct LinkedList LinkedList;
+LinkedList *LinkedList_create(void);
+void LinkedList_destroy(LinkedList *);
+int LinkedList_add(LinkedList *, int val);
+int LinkedList_top(const LinkedList *, int *rval);
+int LinkedList_bottom(const LinkedList *, int *rval);
+
 #endif

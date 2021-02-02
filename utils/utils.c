@@ -383,3 +383,94 @@ void Treenode_print(Treenode *node, FILE *stream)
 		fprintf(target, "%s: %d\n", node->value, node->count);
 	Treenode_print(node->right, stream);
 }
+
+
+/*** LinkedList ***/
+struct node {
+	struct node *next;
+	int val;
+};
+
+struct LinkedList {
+	struct node *head;
+	struct node *tail;
+};
+
+LinkedList *LinkedList_create(void)
+{
+	LinkedList *ret = malloc(sizeof *ret);
+	if (ret) {
+		ret->head = NULL;
+		ret->tail = NULL;
+	}
+	return ret;
+}
+
+void LinkedList_destroy(LinkedList *llist)
+{
+	struct node *tmp;
+	if (llist) {
+		while (llist->tail) {
+			tmp = llist->tail;
+			llist->tail = llist->tail->next;
+			free(tmp);
+		}
+		free(llist);
+	}
+}
+
+int LinkedList_add(LinkedList *llist, int val)
+{
+	int rc = 0;
+	struct node *n;
+
+	if (llist == NULL) {
+		rc = EINVAL;
+	} else if ((n = malloc(sizeof *n)) == NULL) {
+		rc = ENOMEM;
+	} else {
+		n->val = val;
+		n->next = NULL;
+		if (llist->tail == NULL) {
+			llist->head = llist->tail = n;
+		} else {
+			llist->head->next = n;
+			llist->head = n;
+		}
+	}
+
+	return rc;
+}
+
+int LinkedList_top(const LinkedList *llist, int *rval)
+{
+	int rc = 0;
+
+	if (!llist || !rval) {
+		rc = EINVAL;
+	} else {
+		if (llist->head)
+			*rval = llist->head->val;
+		else
+			*rval = 0;
+	}
+
+	return rc;
+}
+
+int LinkedList_bottom(const LinkedList *llist, int *rval)
+{
+	int rc = 0;
+
+	if (!llist || !rval) {
+		rc = EINVAL;
+	} else {
+		if (llist->tail)
+			*rval = llist->tail->val;
+		else
+			*rval = 0;
+	}
+
+	return rc;
+}
+
