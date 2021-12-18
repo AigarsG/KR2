@@ -442,23 +442,23 @@ int LinkedList_add(LinkedList *llist, int val)
 	return rc;
 }
 
-int LinkedList_top(const LinkedList *llist, int *rval)
+int LinkedList_head(const LinkedList *llist, int *rval)
 {
-	int rc = 0;
+	int rc = ENODATA;
 
 	if (!llist || !rval) {
 		rc = EINVAL;
 	} else {
-		if (llist->head)
+		if (llist->head) {
 			*rval = llist->head->val;
-		else
-			*rval = 0;
+			rc = 0;
+		}
 	}
 
 	return rc;
 }
 
-int LinkedList_bottom(const LinkedList *llist, int *rval)
+int LinkedList_tail(const LinkedList *llist, int *rval)
 {
 	int rc = 0;
 

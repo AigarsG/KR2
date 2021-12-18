@@ -52,7 +52,7 @@ typedef struct LinkedList LinkedList;
 LinkedList *LinkedList_create(void);
 void LinkedList_destroy(LinkedList *);
 int LinkedList_add(LinkedList *, int val);
-int LinkedList_top(const LinkedList *, int *rval);
-int LinkedList_bottom(const LinkedList *, int *rval);
+int LinkedList_head(const LinkedList *, int *rval);
+int LinkedList_tail(const LinkedList *, int *rval);
 
 #endif

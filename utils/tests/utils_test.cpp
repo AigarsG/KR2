@@ -382,31 +382,30 @@ TEST(LinkedList, LinkedList_create)
 	CHECK(llist != NULL);
 }
 
-TEST(LinkedList, LinkedList_top)
+TEST(LinkedList, LinkedList_head)
 {
-	CHECK_EQUAL(EINVAL, LinkedList_top(NULL, &rval));
-	CHECK_EQUAL(EINVAL, LinkedList_top(llist, NULL));
-	CHECK_EQUAL(0, LinkedList_top(llist, &rval));
-	CHECK_EQUAL(0, rval);
+	CHECK_EQUAL(ENODATA, LinkedList_head(llist, &rval));
 	LinkedList_add(llist, 12);
-	CHECK_EQUAL(0, LinkedList_top(llist, &rval));
+	CHECK_EQUAL(EINVAL, LinkedList_head(NULL, &rval));
+	CHECK_EQUAL(EINVAL, LinkedList_head(llist, NULL));
+	CHECK_EQUAL(0, LinkedList_head(llist, &rval));
 	CHECK_EQUAL(12, rval);
 	LinkedList_add(llist, -23);
-	CHECK_EQUAL(0, LinkedList_top(llist, &rval));
+	CHECK_EQUAL(0, LinkedList_head(llist, &rval));
 	CHECK_EQUAL(-23, rval);
 }
 
-TEST(LinkedList, LinkedList_bottom)
+TEST(LinkedList, LinkedList_tail)
 {
-	CHECK_EQUAL(EINVAL, LinkedList_bottom(NULL, &rval));
-	CHECK_EQUAL(EINVAL, LinkedList_bottom(llist, NULL));
-	CHECK_EQUAL(0, LinkedList_bottom(llist, &rval));
+	CHECK_EQUAL(EINVAL, LinkedList_tail(NULL, &rval));
+	CHECK_EQUAL(EINVAL, LinkedList_tail(llist, NULL));
+	CHECK_EQUAL(0, LinkedList_tail(llist, &rval));
 	CHECK_EQUAL(0, rval);
 	LinkedList_add(llist, 12);
-	CHECK_EQUAL(0, LinkedList_bottom(llist, &rval));
+	CHECK_EQUAL(0, LinkedList_tail(llist, &rval));
 	CHECK_EQUAL(12, rval);
 	LinkedList_add(llist, -20);
-	CHECK_EQUAL(0, LinkedList_bottom(llist, &rval));
+	CHECK_EQUAL(0, LinkedList_tail(llist, &rval));
 	CHECK_EQUAL(12, rval);
 }
 
@@ -414,7 +413,7 @@ TEST(LinkedList, LinkedList_add)
 {
 	CHECK_EQUAL(EINVAL, LinkedList_add(NULL, 10));
 	LinkedList_add(llist, 10);
-	CHECK_EQUAL(0, LinkedList_top(llist, &rval));
+	CHECK_EQUAL(0, LinkedList_head(llist, &rval));
 	CHECK_EQUAL(10, rval);
 }
 
